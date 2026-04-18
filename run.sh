@@ -1,32 +1,38 @@
 #!/bin/bash
-# Jebi Hackathon 2026 - Entrypoint
+# Jebi Hackathon 2026 - Grupo 04
+# Entrypoint: analiza los videos y escribe resultados en ./outputs/
 #
-# Este script lo va a ejecutar Jebi contra un dataset de testeo distinto
-# al de desarrollo. Editen este archivo para que llame a su solucion.
-#
-# Inputs disponibles en ./inputs/:
+# Inputs esperados en ./inputs/:
 #   - shovel_left.mp4
 #   - shovel_right.mp4
 #   - imu_data.csv
 #
-# Outputs deben escribirse en ./outputs/
+# Outputs generados en ./outputs/:
+#   - analysis.json   Métricas detalladas de ciclos y producción
+#   - report.html     Reporte ejecutivo con visualizaciones
 
-set -e  # Salir al primer error
+set -e
 
-echo "Jebi Hackathon 2026 - Grupo XX"
+echo "============================================"
+echo " Jebi Hackathon 2026 — Grupo 04"
+echo " Mining Productivity 2.0 — Hitachi EX-5600"
+echo "============================================"
+echo ""
 echo "Inputs:"
 ls -la inputs/
+echo ""
 
-# TODO: Equipo, reemplacen esta linea con la llamada a su solucion
-# Ejemplos:
-#   python solution/main.py
-#   node solution/index.js
-#   python -m solution.run
+# Install dependencies if needed
+if ! python -c "import fastapi" 2>/dev/null; then
+  echo "[Setup] Instalando dependencias..."
+  pip install -r requirements.txt -q
+fi
 
-echo "ERROR: run.sh no ha sido implementado todavia"
-echo "Editen run.sh para llamar a su solucion"
-exit 1
+echo "[Run] Ejecutando análisis en modo batch..."
+python -m solution.main --batch
 
+echo ""
 echo "Outputs generados:"
 ls -la outputs/
+echo ""
 echo "Done."

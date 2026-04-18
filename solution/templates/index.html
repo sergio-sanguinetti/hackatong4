@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mining Shovel Dashboard — Grupo 04</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:        #0f1117;
+      --card:      #1a1f2e;
+      --border:    #2d3748;
+      --gold:      #f6a623;
+      --text:      #e2e8f0;
+      --muted:     #718096;
+      --blue:      #3182ce;
+    }
+    * { box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', Arial, sans-serif; margin: 0; }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #161b22 0%, #1a1f2e 100%);
+      border-bottom: 2px solid var(--gold);
+      padding: 10px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 700; color: var(--gold); margin: 0; letter-spacing: .04em; }
+    header .subtitle { font-size: .75rem; color: var(--muted); }
+    #conn-badge {
+      font-size: .7rem; font-weight: 600; letter-spacing: .06em;
+      padding: 3px 10px; border-radius: 20px;
+      background: #2a3a2a; color: #48bb78;
+      border: 1px solid #38a169;
+    }
+    #conn-badge.off { background: #3a1f1f; color: #fc8181; border-color: #e53e3e; }
+
+    /* ── KPI cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 16px 20px 0; }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; position: relative; overflow: hidden;
+    }
+    .kpi::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: var(--gold);
+    }
+    .kpi-val { font-size: 2rem; font-weight: 800; color: var(--gold); line-height: 1; }
+    .kpi-lbl { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; margin-top: 4px; }
+    .kpi-sub { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Phase indicator ── */
+    #phase-banner {
+      margin: 14px 20px 0;
+      border-radius: 10px; padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: background .4s ease;
+    }
+    .phase-name { font-size: 1.3rem; font-weight: 800; letter-spacing: .06em; }
+    .phase-timer { font-size: 1.1rem; font-weight: 300; color: rgba(255,255,255,.7); }
+    .phase-desc  { font-size: .8rem; color: rgba(255,255,255,.6); margin-top: 2px; }
+
+    /* ── Main grid ── */
+    .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px 20px; }
+
+    /* ── Video panels ── */
+    .video-panel {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    }
+    .video-header {
+      padding: 8px 14px; background: #12151e; border-bottom: 1px solid var(--border);
+      font-size: .78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .07em;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .video-panel img { width: 100%; display: block; min-height: 220px; object-fit: cover; }
+
+    /* ── Right column ── */
+    .right-col { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ── Truck progress ── */
+    .truck-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+    }
+    .truck-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .truck-title  { font-size: .85rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: .06em; }
+    .truck-num    { font-size: .75rem; color: var(--muted); }
+
+    .passes-row { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .pass-dot {
+      width: 36px; height: 36px; border-radius: 6px; border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; color: var(--muted);
+      transition: all .3s ease;
+    }
+    .pass-dot.filled { background: var(--gold); border-color: var(--gold); color: #000; }
+    .pass-dot.partial { background: #4a3800; border-color: var(--gold); color: var(--gold); }
+
+    .weight-bar-wrap { margin-bottom: 10px; }
+    .weight-bar-lbl { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); margin-bottom: 4px; }
+    .weight-bar-bg { background: var(--border); border-radius: 4px; height: 10px; overflow: hidden; }
+    .weight-bar-fill { height: 10px; background: linear-gradient(90deg, #f6a623, #e53e3e); border-radius: 4px; transition: width .5s ease; }
+
+    .truck-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .t-stat { text-align: center; }
+    .t-stat-val { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+    .t-stat-lbl { font-size: .65rem; color: var(--muted); text-transform: uppercase; }
+
+    /* ── Chart card ── */
+    .chart-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+      flex: 1;
+    }
+    .chart-title { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
+                   letter-spacing: .07em; margin-bottom: 10px; }
+
+    /* ── Phase breakdown table ── */
+    .breakdown-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px;
+    }
+    .breakdown-title { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase;
+                       letter-spacing: .07em; margin-bottom: 10px; }
+    .breakdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .breakdown-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .breakdown-name { font-size: .8rem; color: var(--text); flex: 1; }
+    .breakdown-bar-bg { flex: 2; background: var(--border); border-radius: 3px; height: 8px; overflow: hidden; }
+    .breakdown-bar-fill { height: 8px; border-radius: 3px; transition: width .5s; }
+    .breakdown-val { font-size: .78rem; color: var(--muted); width: 45px; text-align: right; }
+
+    /* ── Bottom strip ── */
+    .bottom-strip {
+      padding: 8px 20px 16px;
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .param-pill {
+      background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+      padding: 5px 12px; font-size: .73rem; color: var(--muted);
+    }
+    .param-pill strong { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────────── -->
+<header>
+  <div>
+    <h1>⛏ Mining Shovel Dashboard &nbsp;·&nbsp; Hitachi EX-5600</h1>
+    <div class="subtitle">Jebi Hackathon 2026 · Grupo 04 &nbsp;|&nbsp; Análisis en tiempo real</div>
+  </div>
+  <div id="conn-badge">● CONECTADO</div>
+</header>
+
+<!-- ── KPI Row ─────────────────────────────────────────────────────────────── -->
+<div class="kpi-grid">
+  <div class="kpi">
+    <div class="kpi-val" id="kpi-cycles">—</div>
+    <div class="kpi-lbl">Ciclos Totales</div>
+    <div class="kpi-sub" id="kpi-trucks-done">0 camiones completados</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val" id="kpi-cycle-time">—</div>
+    <div class="kpi-lbl">Tiempo de Ciclo (prom)</div>
+    <div class="kpi-sub">Objetivo: 40 s</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val" id="kpi-tph">—</div>
+    <div class="kpi-lbl">Producción (t/h)</div>
+    <div class="kpi-sub" id="kpi-total-tons">0 t movidas en sesión</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val" id="kpi-eff">—</div>
+    <div class="kpi-lbl">Eficiencia</div>
+    <div class="kpi-sub">vs. ciclo objetivo</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-val" id="kpi-session">—</div>
+    <div class="kpi-lbl">Tiempo Sesión</div>
+    <div class="kpi-sub">hh:mm:ss</div>
+  </div>
+</div>
+
+<!-- ── Phase Banner ────────────────────────────────────────────────────────── -->
+<div id="phase-banner">
+  <div>
+    <div class="phase-name" id="phase-name">INICIALIZANDO</div>
+    <div class="phase-desc" id="phase-desc">Esperando datos del ciclo...</div>
+  </div>
+  <div class="phase-timer">
+    <span id="phase-elapsed">0</span> s en fase
+  </div>
+</div>
+
+<!-- ── Main Grid ───────────────────────────────────────────────────────────── -->
+<div class="main-grid">
+
+  <!-- Left column: videos -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="video-panel">
+      <div class="video-header">
+        <span>📷 Cámara Izquierda</span>
+        <span id="left-status" style="color:#48bb78;">● LIVE</span>
+      </div>
+      <img id="left-feed" src="/video/left" alt="Left Camera" onerror="this.src='/video/left'" />
+    </div>
+    <div class="video-panel">
+      <div class="video-header">
+        <span>📷 Cámara Derecha</span>
+        <span id="right-status" style="color:#48bb78;">● LIVE</span>
+      </div>
+      <img id="right-feed" src="/video/right" alt="Right Camera" onerror="this.src='/video/right'" />
+    </div>
+  </div>
+
+  <!-- Right column: stats -->
+  <div class="right-col">
+
+    <!-- Truck progress -->
+    <div class="truck-card">
+      <div class="truck-header">
+        <span class="truck-title">🚛 Carga del Camión Actual</span>
+        <span class="truck-num" id="truck-num">Camión #1</span>
+      </div>
+
+      <div class="passes-row" id="passes-row">
+        <!-- filled dynamically -->
+      </div>
+
+      <div class="weight-bar-wrap">
+        <div class="weight-bar-lbl">
+          <span>Tonelaje estimado</span>
+          <span id="weight-label">0 / 250 t</span>
+        </div>
+        <div class="weight-bar-bg">
+          <div class="weight-bar-fill" id="weight-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="truck-stats">
+        <div class="t-stat">
+          <div class="t-stat-val" id="ts-passes">0 / 7</div>
+          <div class="t-stat-lbl">Pases</div>
+        </div>
+        <div class="t-stat">
+          <div class="t-stat-val" id="ts-tons">0 t</div>
+          <div class="t-stat-lbl">Toneladas</div>
+        </div>
+        <div class="t-stat">
+          <div class="t-stat-val" id="ts-pct">0%</div>
+          <div class="t-stat-lbl">Llenado</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cycle times chart -->
+    <div class="chart-card">
+      <div class="chart-title">⏱ Últimos Tiempos de Ciclo (s)</div>
+      <canvas id="cycle-chart" height="120"></canvas>
+    </div>
+
+    <!-- Phase breakdown -->
+    <div class="breakdown-card">
+      <div class="breakdown-title">📊 Desglose por Fase (promedio)</div>
+      <div id="breakdown-rows"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Bottom strip: constants ─────────────────────────────────────────────── -->
+<div class="bottom-strip">
+  <div class="param-pill">Cuchara: <strong>34 m³</strong></div>
+  <div class="param-pill">Factor llenado: <strong>0.90</strong> → <strong>30.6 m³</strong> efectivo</div>
+  <div class="param-pill">Densidad: <strong>1.6 t/m³</strong></div>
+  <div class="param-pill">Ton/pase: <strong>~49 t</strong></div>
+  <div class="param-pill">Pases/camión: <strong>7</strong></div>
+  <div class="param-pill">Cap. camión: <strong>240–260 t</strong></div>
+  <div class="param-pill">Tiempo carga camión: <strong>2 min 8 s</strong></div>
+  <div class="param-pill">Cambio camión: <strong>20–23 s</strong></div>
+</div>
+
+<script>
+// ── Phase metadata ──────────────────────────────────────────────────────────
+const PHASE_META = {
+  EXCAVATING:   { label: "EXCAVANDO",        desc: "Llenado de cuchara (10–12 s estimado)", color: "#e53e3e" },
+  SWING_LOADED: { label: "GIRO CON CARGA",   desc: "Giro hacia camión con material (10–15 s estimado)", color: "#dd6b20" },
+  DUMPING:      { label: "DESCARGANDO",      desc: "Vaciando cuchara en camión (3–5 s estimado)", color: "#38a169" },
+  SWING_EMPTY:  { label: "GIRO VACÍO",       desc: "Retorno al frente de excavación (8–12 s estimado)", color: "#3182ce" },
+  TRUCK_CHANGE: { label: "CAMBIO DE CAMIÓN", desc: "Esperando posicionamiento del nuevo camión (20–23 s)", color: "#805ad5" },
+  IDLE:         { label: "EN ESPERA",        desc: "Pala detenida", color: "#718096" },
+  INITIALIZING: { label: "INICIALIZANDO",    desc: "Cargando datos...", color: "#4a5568" },
+};
+
+const PHASE_TARGETS = {
+  EXCAVATING: 11, SWING_LOADED: 12.5, DUMPING: 4, SWING_EMPTY: 10, TRUCK_CHANGE: 21
+};
+
+// ── Chart setup ─────────────────────────────────────────────────────────────
+const ctx = document.getElementById("cycle-chart").getContext("2d");
+const cycleChart = new Chart(ctx, {
+  type: "bar",
+  data: {
+    labels: [],
+    datasets: [{
+      label: "Ciclo (s)",
+      data: [],
+      backgroundColor: "rgba(246,166,35,.7)",
+      borderColor: "#f6a623",
+      borderWidth: 1,
+      borderRadius: 4,
+    }, {
+      label: "Objetivo (40 s)",
+      data: [],
+      type: "line",
+      borderColor: "#e53e3e",
+      borderWidth: 1.5,
+      borderDash: [5, 4],
+      pointRadius: 0,
+      fill: false,
+    }]
+  },
+  options: {
+    responsive: true,
+    animation: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: "#718096", font: { size: 10 } }, grid: { color: "#2d3748" } },
+      y: { ticks: { color: "#718096", font: { size: 10 } }, grid: { color: "#2d3748" }, min: 0 }
+    }
+  }
+});
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function fmtTime(s) {
+  const h = Math.floor(s / 3600).toString().padStart(2, "0");
+  const m = Math.floor((s % 3600) / 60).toString().padStart(2, "0");
+  const sec = (s % 60).toString().padStart(2, "0");
+  return `${h}:${m}:${sec}`;
+}
+
+function updatePasses(passes, total, color) {
+  const row = document.getElementById("passes-row");
+  row.innerHTML = "";
+  for (let i = 1; i <= total; i++) {
+    const dot = document.createElement("div");
+    dot.className = "pass-dot" + (i <= passes ? " filled" : (i === passes + 1 ? " partial" : ""));
+    dot.textContent = i;
+    if (i <= passes) dot.style.background = color;
+    if (i <= passes) dot.style.borderColor = color;
+    row.appendChild(dot);
+  }
+}
+
+function updateBreakdown(avgs) {
+  const container = document.getElementById("breakdown-rows");
+  container.innerHTML = "";
+  const phases = ["EXCAVATING", "SWING_LOADED", "DUMPING", "SWING_EMPTY"];
+  const maxVal = Math.max(...phases.map(p => avgs[p] || PHASE_TARGETS[p]), 1);
+  phases.forEach(ph => {
+    const meta = PHASE_META[ph] || {};
+    const val = avgs[ph] || PHASE_TARGETS[ph];
+    const target = PHASE_TARGETS[ph];
+    const barPct = Math.min(100, (val / maxVal) * 100);
+    const overTarget = val > target * 1.1;
+    const row = document.createElement("div");
+    row.className = "breakdown-row";
+    row.innerHTML = `
+      <div class="breakdown-dot" style="background:${meta.color}"></div>
+      <div class="breakdown-name">${meta.label}</div>
+      <div class="breakdown-bar-bg">
+        <div class="breakdown-bar-fill" style="width:${barPct}%;background:${overTarget ? '#e53e3e' : meta.color}"></div>
+      </div>
+      <div class="breakdown-val">${val}s</div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ── SSE listener ─────────────────────────────────────────────────────────────
+let lastMetrics = null;
+const badge = document.getElementById("conn-badge");
+
+function connectSSE() {
+  const es = new EventSource("/metrics/stream");
+
+  es.onmessage = (e) => {
+    try {
+      const m = JSON.parse(e.data);
+      lastMetrics = m;
+      renderMetrics(m);
+    } catch (err) {}
+  };
+
+  es.onerror = () => {
+    badge.textContent = "● DESCONECTADO";
+    badge.className = "off";
+    setTimeout(connectSSE, 3000);
+  };
+
+  es.onopen = () => {
+    badge.textContent = "● CONECTADO";
+    badge.className = "";
+  };
+}
+
+function renderMetrics(m) {
+  // KPI cards
+  document.getElementById("kpi-cycles").textContent     = m.cycle_count;
+  document.getElementById("kpi-trucks-done").textContent = `${m.trucks_completed} camión(es) completado(s)`;
+  document.getElementById("kpi-cycle-time").textContent  = `${m.avg_cycle_s}s`;
+  document.getElementById("kpi-tph").textContent         = `${m.production_tph}`;
+  document.getElementById("kpi-total-tons").textContent  = `${m.total_tons} t movidas`;
+  document.getElementById("kpi-eff").textContent         = `${m.efficiency_pct}%`;
+  document.getElementById("kpi-session").textContent     = fmtTime(m.session_elapsed_s);
+
+  // Phase banner
+  const meta = PHASE_META[m.phase] || { label: m.phase, desc: "", color: "#718096" };
+  document.getElementById("phase-banner").style.background = meta.color + "22";
+  document.getElementById("phase-banner").style.borderLeft = `4px solid ${meta.color}`;
+  document.getElementById("phase-name").textContent    = meta.label;
+  document.getElementById("phase-name").style.color    = meta.color;
+  document.getElementById("phase-desc").textContent    = meta.desc;
+  document.getElementById("phase-elapsed").textContent = m.phase_elapsed_s;
+
+  // Truck progress
+  const truckNum = m.trucks_completed + 1;
+  document.getElementById("truck-num").textContent = `Camión #${truckNum}`;
+  document.getElementById("ts-passes").textContent  = `${m.passes_this_truck} / ${m.passes_per_truck}`;
+  document.getElementById("ts-tons").textContent    = `${m.tons_this_truck} t`;
+  document.getElementById("ts-pct").textContent     = `${m.truck_fill_pct}%`;
+  document.getElementById("weight-bar").style.width = `${m.truck_fill_pct}%`;
+  document.getElementById("weight-label").textContent = `${m.tons_this_truck} / ${m.truck_capacity_tons} t`;
+
+  updatePasses(m.passes_this_truck, m.passes_per_truck, meta.color);
+
+  // Cycle time chart
+  const times  = m.recent_cycle_times;
+  const labels = times.map((_, i) => `#${m.cycle_count - times.length + i + 1}`);
+  cycleChart.data.labels = labels;
+  cycleChart.data.datasets[0].data = times;
+  cycleChart.data.datasets[1].data = times.map(() => 40);
+  cycleChart.update("none");
+
+  // Phase breakdown
+  updateBreakdown(m.phase_avg_durations || {});
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+connectSSE();
+
+// Refresh images on stall (fallback)
+setInterval(() => {
+  ["left-feed", "right-feed"].forEach(id => {
+    const img = document.getElementById(id);
+    if (!img.complete || img.naturalHeight === 0) {
+      const src = img.src.split("?")[0];
+      img.src = src + "?t=" + Date.now();
+    }
+  });
+}, 5000);
+</script>
+</body>
+</html>

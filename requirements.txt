@@ -1,8 +1,13 @@
-# Editen segun necesiten. Estas son sugerencias comunes para CV + IMU.
-# Si usan otro stack (Node, Rust, etc), borren este archivo y agreguen el suyo.
-
+# Jebi Hackathon 2026 - Grupo 04
+# Computer vision + data processing
 opencv-python>=4.8.0
 numpy>=1.24.0
 pandas>=2.0.0
 scipy>=1.11.0
 matplotlib>=3.7.0
+
+# FastAPI web dashboard
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+jinja2>=3.1.0
+python-multipart>=0.0.9

@@ -1,0 +1,16 @@
+{
+  "name": "jebi-hackathon-2026-g04",
+  "version": "1.0.0",
+  "description": "Repositorio oficial de entrega para el grupo 04 del Jebi Hackathon 2026.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.90.0",
+    "readline-sync": "^1.4.10"
+  }
+}
