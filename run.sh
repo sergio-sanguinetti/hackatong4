@@ -1,31 +1,18 @@
 #!/bin/bash
-# Jebi Hackathon 2026 - Entrypoint
-#
-# Este script lo va a ejecutar Jebi contra un dataset de testeo distinto
-# al de desarrollo. Editen este archivo para que llame a su solucion.
-#
-# Inputs disponibles en ./inputs/:
-#   - shovel_left.mp4
-#   - shovel_right.mp4
-#   - imu_data.csv
-#
-# Outputs deben escribirse en ./outputs/
 
-set -e  # Salir al primer error
+set -euo pipefail
 
-echo "Jebi Hackathon 2026 - Grupo XX"
-echo "Inputs:"
-ls -la inputs/
+echo "Jebi Hackathon 2026 - Grupo 04"
+echo "Instalando dependencias..."
+if [ ! -d ".venv" ]; then
+  python3 -m venv .venv
+fi
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 
-# TODO: Equipo, reemplacen esta linea con la llamada a su solucion
-# Ejemplos:
-#   python solution/main.py
-#   node solution/index.js
-#   python -m solution.run
-
-echo "ERROR: run.sh no ha sido implementado todavia"
-echo "Editen run.sh para llamar a su solucion"
-exit 1
+echo "Ejecutando procesamiento batch..."
+python -m solution.main --batch
 
 echo "Outputs generados:"
 ls -la outputs/
